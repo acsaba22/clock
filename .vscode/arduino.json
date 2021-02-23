@@ -1,0 +1,7 @@
+{
+    "programmer": "Arduino as ISP",
+    "board": "attiny:avr:ATtinyX5",
+    "configuration": "cpu=attiny85,clock=internal8",
+    "port": "/dev/ttyUSB0",
+    "sketch": "clock.c/clock.c.ino"
+}
