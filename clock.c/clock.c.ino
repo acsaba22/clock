@@ -8,9 +8,9 @@ enum Mode {
     SLAVE
 };
 
-byte mode = MASTER;
-byte ledPin = 3;
-byte debugPin = 4;
+const byte mode = MASTER;
+const byte ledPin = 3;
+const byte debugPin = 4;
 
 typedef unsigned long ulong;
 typedef unsigned int uint;
@@ -30,24 +30,39 @@ void blink() {
 
 }
 
-void KeepOn(uint totalMilli, ulong cycleMicro, byte fraction) {
-    digitalWrite(debugPin, HIGH);
-    ulong onTimeMicro = cycleMicro / fraction;
+void KeepOn(uint totalMilli, ulong cycleMicro, byte onFraction) {
+    ulong onTimeMicro = cycleMicro / onFraction;
     ulong offTimeMicro = cycleMicro - onTimeMicro;
+    bool milliMode = false;
+    if (50000 < cycleMicro) {
+        milliMode = true;
+        onTimeMicro /= 1000;
+        offTimeMicro /= 1000;
+    }
     ulong start = millis();
     ulong end = start + totalMilli;
     ulong debugEnd = start + 300;
     bool debug = true;
+    digitalWrite(debugPin, HIGH);
     for (ulong m = millis(); m < end; m = millis()) {
         if (debug == true && debugEnd <= m) {
             debug = false;
             digitalWrite(debugPin, LOW);
         }
         digitalWrite(ledPin, HIGH);
-        delayMicroseconds(onTimeMicro);
+        if (milliMode) {
+            delay(onTimeMicro);
+        } else {
+            delayMicroseconds(onTimeMicro);
+        }
         digitalWrite(ledPin, LOW);
-        delayMicroseconds(offTimeMicro);
+        if (milliMode) {
+            delay(offTimeMicro);
+        } else {
+            delayMicroseconds(offTimeMicro);
+        }
     }
+
 }
 
 const ulong cycles[] = {1000000, 330000, 100000, 33000, 10000, 3300, 1000};
