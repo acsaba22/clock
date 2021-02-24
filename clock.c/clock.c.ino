@@ -131,7 +131,7 @@ struct Receiver {
         if ((3*sendRate)/100 < diff) {
             return BADDELAY;
         }
-        u16 longShortThreshold = (cycle_time * 3) / 4;
+        u32 longShortThreshold = (cycle_time * 3) / 4;
         for (u8 i = 0; i<n; i++) {
             u8 data = 0;
             for (u8 bit = 0x80; bit; bit>>=1) {
@@ -154,7 +154,6 @@ struct Receiver {
             }
             dataVec[i] = data;
         }
-        delay((u32(cycle_time)*9)*n);
         return READOK;
     }
 };
@@ -225,14 +224,17 @@ void slaveLoop() {
     Receiver receiver(ledPin);
     byte data[10];
     Receiver::Status s = receiver.Receive(data, 1);
-    u8 blinkNum = s+1;
+    u8 blinkNum = s+2;
+    if (s == Receiver::READOK && data[0] == 0b11010011) {
+        blinkNum = 1;
+    }
     for (u8 i=0; i<blinkNum; i++) {
         digitalWrite(debugPin, HIGH);
         delay(200);
         digitalWrite(debugPin, LOW);
         delay(200);
     }
-    delay(400);
+    delay(700);
     // if d
     // byte data[] = {0b11010011};
 }
