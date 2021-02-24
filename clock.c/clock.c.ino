@@ -12,15 +12,34 @@ const byte mode = MASTER;
 const byte ledPin = 3;
 const byte debugPin = 4;
 
-typedef unsigned long ulong;
-typedef unsigned int uint;
+typedef unsigned long ulong; // 32
+typedef unsigned int uint; // 16
+typedef unsigned long u32;
+typedef unsigned int u16;
+typedef byte u8;
+typedef long i32;
+typedef int i16;
+typedef char i8;
 
-void setup() {
+void masterSetup() {
     pinMode(ledPin, OUTPUT);
     pinMode(debugPin, OUTPUT);
 }
 
-void loop() {
+void slaveSetup() {
+    pinMode(ledPin, INPUT);
+    pinMode(debugPin, OUTPUT);
+}
+
+void setup() {
+    if (mode == MASTER) {
+        masterSetup();
+    } else {
+        slaveSetup();
+    }
+}
+
+void masterLoop() {
     digitalWrite(debugPin, 1);
     delay(1000);
     digitalWrite(debugPin, 0);
@@ -28,8 +47,15 @@ void loop() {
     send(ledPin, data, 1);
 }
 
+void loop() {
+    if (mode == MASTER) {
+        masterLoop();
+    }
+}
+
 const int sendHalf = 500;
 const int sendRate = sendHalf*2;
+const int recieveTimeout = sendRate*3;
 
 void send(byte pin, byte* dataVec, byte n) {
     digitalWrite(pin, 0);
@@ -60,25 +86,60 @@ void send(byte pin, byte* dataVec, byte n) {
     }
 }
 
-enum ReadError {
-    READOK,
-    ALREADY,
-    DELAY99,
-    DELAY90,
-    DELAY80
+struct Reader {
+    enum ReadStatus {
+        READOK,
+        ALREADYHIGH,
+        BADDELAY,
+    };
+
+    u8 pin;
+    u8 currVal;
+    u32 currStart;
+    u32 prevLength;
+
+
+    Reader(byte pin) {
+        this->pin = pin;
+    }
+
+    ReadStatus waitChange() {
+        u32 prevStart = currStart;
+        while (digitalRead(pin) == currVal) {
+            ulong elapsed = millis()-currStart;
+            if (recieveTimeout < elapsed) {
+                return BADDELAY;
+            }
+        }
+        currStart = millis();
+        prevLength = currStart - prevStart;
+        currVal = 1 - currVal;
+        return READOK;
+    }
+
+    ReadStatus Recieve(byte pin, byte *dataVec, byte n) {
+        if (digitalRead(pin) != 0) {
+            return ALREADYHIGH;
+        }
+        while (digitalRead(pin) == 0) {}
+        currStart = millis();
+        currVal = 1;
+        ReadStatus ret = waitChange();
+        if (ret != READOK) {
+            return ret;
+        }
+        u32 cycle_time = prevLength;
+        int diff = int(cycle_time) - sendRate;
+        diff = abs(diff);
+        if ((15*sendRate)/100 < diff) {
+            return BADDELAY;
+        }
+        delay((u32(cycle_time)*9)*n);
+        return READOK;
+    }
 };
 
 // returns 0 if ok, error code otherwise
-bool recieve(byte pin, byte *dataVec, byte n) {
-    if (digitalRead(pin) != 0) {
-        return false;
-    }
-    while (digitalRead(pin) == 0) {}
-    ulong start = millis();
-    while (digitalRead(pin) == 1) {}
-    ulong end = millis();
-    // ulong cycle_time == 
-}
 
 void blink() {
   digitalWrite(ledPin, HIGH);
