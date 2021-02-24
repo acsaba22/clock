@@ -39,18 +39,19 @@ void setup() {
     }
 }
 
+const int sendHalf = 500;
+const int sendRate = sendHalf*2;
+const int recieveTimeout = sendRate*3;
+
 void masterLoop() {
     digitalWrite(debugPin, 1);
-    delay(5000);
+    delay(recieveTimeout*2);
     digitalWrite(debugPin, 0);
     byte data[] = {0b11010011};
     send(ledPin, data, 1);
 }
 
 
-const int sendHalf = 500;
-const int sendRate = sendHalf*2;
-const int recieveTimeout = sendRate*3;
 
 void send(byte pin, byte* dataVec, byte n) {
     digitalWrite(pin, 0);
@@ -86,6 +87,7 @@ struct Receiver {
         READOK,
         ALREADYHIGH,
         BADDELAY,
+        TIMEOUT,
         SINGLESHORT,
     };
 
@@ -103,7 +105,7 @@ struct Receiver {
         while (digitalRead(pin) == currVal) {
             ulong elapsed = millis()-currStart;
             if (recieveTimeout < elapsed) {
-                return BADDELAY;
+                return TIMEOUT;
             }
         }
         currStart = millis();
@@ -126,7 +128,7 @@ struct Receiver {
         u32 cycle_time = prevLength;
         int diff = int(cycle_time) - sendRate;
         diff = abs(diff);
-        if ((15*sendRate)/100 < diff) {
+        if ((3*sendRate)/100 < diff) {
             return BADDELAY;
         }
         u16 longShortThreshold = (cycle_time * 3) / 4;
@@ -226,10 +228,11 @@ void slaveLoop() {
     u8 blinkNum = s+1;
     for (u8 i=0; i<blinkNum; i++) {
         digitalWrite(debugPin, HIGH);
-        delay(300);
+        delay(200);
         digitalWrite(debugPin, LOW);
-        delay(300);
+        delay(200);
     }
+    delay(400);
     // if d
     // byte data[] = {0b11010011};
 }
