@@ -8,14 +8,14 @@ enum Mode {
     SLAVE
 };
 
-const byte mode = MASTER;
+const byte mode = SLAVE;
 const byte ledPin = 3;
 const byte debugPin = 4;
 
 typedef unsigned long ulong; // 32
 typedef unsigned int uint; // 16
 typedef unsigned long u32;
-typedef unsigned int u16;
+// typedef unsigned int u16;
 typedef byte u8;
 typedef long i32;
 typedef int i16;
@@ -41,17 +41,12 @@ void setup() {
 
 void masterLoop() {
     digitalWrite(debugPin, 1);
-    delay(1000);
+    delay(5000);
     digitalWrite(debugPin, 0);
     byte data[] = {0b11010011};
     send(ledPin, data, 1);
 }
 
-void loop() {
-    if (mode == MASTER) {
-        masterLoop();
-    }
-}
 
 const int sendHalf = 500;
 const int sendRate = sendHalf*2;
@@ -81,16 +76,17 @@ void send(byte pin, byte* dataVec, byte n) {
     lastVal = 1-lastVal;
     digitalWrite(pin, lastVal);
     if (lastVal==1) {
-        delay(sendRate);
+        delay(sendHalf);
         digitalWrite(pin, 0);
     }
 }
 
-struct Reader {
-    enum ReadStatus {
+struct Receiver {
+    enum Status {
         READOK,
         ALREADYHIGH,
         BADDELAY,
+        SINGLESHORT,
     };
 
     u8 pin;
@@ -98,12 +94,11 @@ struct Reader {
     u32 currStart;
     u32 prevLength;
 
-
-    Reader(byte pin) {
+    Receiver(byte pin) {
         this->pin = pin;
     }
 
-    ReadStatus waitChange() {
+    Status waitChange() {
         u32 prevStart = currStart;
         while (digitalRead(pin) == currVal) {
             ulong elapsed = millis()-currStart;
@@ -117,14 +112,14 @@ struct Reader {
         return READOK;
     }
 
-    ReadStatus Recieve(byte pin, byte *dataVec, byte n) {
+    Status Receive(byte *dataVec, byte n) {
         if (digitalRead(pin) != 0) {
             return ALREADYHIGH;
         }
         while (digitalRead(pin) == 0) {}
         currStart = millis();
         currVal = 1;
-        ReadStatus ret = waitChange();
+        Status ret = waitChange();
         if (ret != READOK) {
             return ret;
         }
@@ -133,6 +128,29 @@ struct Reader {
         diff = abs(diff);
         if ((15*sendRate)/100 < diff) {
             return BADDELAY;
+        }
+        u16 longShortThreshold = (cycle_time * 3) / 4;
+        for (u8 i = 0; i<n; i++) {
+            u8 data = 0;
+            for (u8 bit = 0x80; bit; bit>>=1) {
+                ret = waitChange();
+                if (ret != READOK) {
+                    return ret;
+                }
+                if (prevLength < longShortThreshold) {
+                    // 0
+                    ret = waitChange();
+                    if (ret != READOK) {
+                        return ret;
+                    }
+                    if (longShortThreshold <= prevLength) {
+                        return SINGLESHORT;
+                    }
+                } else {
+                    data |= bit;
+                }
+            }
+            dataVec[i] = data;
         }
         delay((u32(cycle_time)*9)*n);
         return READOK;
@@ -198,5 +216,29 @@ const byte fractions[] = {4, 8, 16, 32, 64};
 void TestFractions() {
     for (int i=0; i<LEN(fractions); i++) {
         KeepOn(5000, 10000, fractions[i]);
+    }
+}
+
+void slaveLoop() {
+    Receiver receiver(ledPin);
+    byte data[10];
+    Receiver::Status s = receiver.Receive(data, 1);
+    u8 blinkNum = s+1;
+    for (u8 i=0; i<blinkNum; i++) {
+        digitalWrite(debugPin, HIGH);
+        delay(300);
+        digitalWrite(debugPin, LOW);
+        delay(300);
+    }
+    // if d
+    // byte data[] = {0b11010011};
+}
+
+
+void loop() {
+    if (mode == MASTER) {
+        masterLoop();
+    } else {
+        slaveLoop();
     }
 }
