@@ -16,6 +16,8 @@ void masterSetup(byte ledPin, byte debugPin) {
 void slaveSetup(byte ledPin, byte debugPin) {
     pinMode(ledPin, INPUT);
     pinMode(debugPin, OUTPUT);
+    delay(300);
+
 }
 
 void setupManchesterTest(Mode mode, byte ledPin, byte debugPin) {
@@ -26,20 +28,22 @@ void setupManchesterTest(Mode mode, byte ledPin, byte debugPin) {
     }
 }
 
+const char message[] = "Hello World!";
+const char messageLen = LEN(message);
+
 void masterLoop(byte ledPin, byte debugPin) {
     digitalWrite(debugPin, 1);
-    delay(recieveTimeout*2);
+    delay(3000);
     digitalWrite(debugPin, 0);
-    byte data[] = {0b11010011};
-    send(ledPin, data, 1);
+    send(ledPin, (byte*)message, messageLen);
 }
 
 void slaveLoop(byte ledPin, byte debugPin) {
     Receiver receiver(ledPin);
-    byte data[10];
-    Receiver::Status s = receiver.Receive(data, 1);
+    byte data[messageLen+10];
+    Receiver::Status s = receiver.Receive(data, messageLen);
     u8 blinkNum = s+2;
-    if (s == Receiver::READOK && data[0] == 0b11010011) {
+    if (s == Receiver::READOK && strncmp((char*)data, message, messageLen) == 0) {
         blinkNum = 1;
     }
     for (u8 i=0; i<blinkNum; i++) {
@@ -48,7 +52,7 @@ void slaveLoop(byte ledPin, byte debugPin) {
         digitalWrite(debugPin, LOW);
         delay(200);
     }
-    delay(700);
+    delay(400);
 }
 
 

@@ -6,7 +6,7 @@
 #include "util.h"
 
 
-const int sendHalf = 500;
+const int sendHalf = 100;
 const int sendRate = sendHalf*2;
 const int recieveTimeout = sendRate*3;
 
@@ -85,7 +85,7 @@ struct Receiver {
         u32 cycle_time = prevLength;
         int diff = int(cycle_time) - sendRate;
         diff = abs(diff);
-        if ((3*sendRate)/100 < diff) {
+        if ((15*sendRate)/100 < diff) {
             return BADDELAY;
         }
         u32 longShortThreshold = (cycle_time * 3) / 4;
