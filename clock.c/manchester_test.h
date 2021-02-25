@@ -16,8 +16,6 @@ void masterSetup(byte ledPin, byte debugPin) {
 void slaveSetup(byte ledPin, byte debugPin) {
     pinMode(ledPin, INPUT);
     pinMode(debugPin, OUTPUT);
-    delay(300);
-
 }
 
 void setupManchesterTest(Mode mode, byte ledPin, byte debugPin) {
@@ -35,7 +33,8 @@ void masterLoop(byte ledPin, byte debugPin) {
     digitalWrite(debugPin, 1);
     delay(3000);
     digitalWrite(debugPin, 0);
-    send(ledPin, (byte*)message, messageLen);
+    Sender sender(ledPin);
+    sender.Send((byte*)message, messageLen);
 }
 
 void slaveLoop(byte ledPin, byte debugPin) {
