@@ -12,9 +12,9 @@ const int recieveTimeout = sendRate*3;
 
 void send(byte pin, byte* dataVec, byte n) {
     digitalWrite(pin, 0);
-    delay(sendRate);
+    delayMicroseconds(sendRate);
     digitalWrite(pin, 1);
-    delay(sendRate);
+    delayMicroseconds(sendRate);
     byte lastVal = 1;
     for (byte i=0; i<n; i++) {
         byte data = dataVec[i];
@@ -22,19 +22,19 @@ void send(byte pin, byte* dataVec, byte n) {
             if (bit&data) {
                 lastVal = 1 - lastVal;
                 digitalWrite(pin, lastVal);
-                delay(sendRate);
+                delayMicroseconds(sendRate);
             } else {
                 digitalWrite(pin, 1-lastVal);
-                delay(sendHalf);
+                delayMicroseconds(sendHalf);
                 digitalWrite(pin, lastVal);
-                delay(sendHalf);
+                delayMicroseconds(sendHalf);
             }
         }
     }
     lastVal = 1-lastVal;
     digitalWrite(pin, lastVal);
     if (lastVal==1) {
-        delay(sendHalf);
+        delayMicroseconds(sendHalf);
         digitalWrite(pin, 0);
     }
 }
@@ -60,12 +60,12 @@ struct Receiver {
     Status waitChange() {
         u32 prevStart = currStart;
         while (digitalRead(pin) == currVal) {
-            ulong elapsed = millis()-currStart;
+            ulong elapsed = micros()-currStart;
             if (recieveTimeout < elapsed) {
                 return TIMEOUT;
             }
         }
-        currStart = millis();
+        currStart = micros();
         prevLength = currStart - prevStart;
         currVal = 1 - currVal;
         return READOK;
@@ -76,7 +76,7 @@ struct Receiver {
             return ALREADYHIGH;
         }
         while (digitalRead(pin) == 0) {}
-        currStart = millis();
+        currStart = micros();
         currVal = 1;
         Status ret = waitChange();
         if (ret != READOK) {
