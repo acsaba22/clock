@@ -12,9 +12,4 @@ typedef long i32;
 typedef int i16;
 typedef char i8;
 
-enum Mode {
-    MASTER,
-    SLAVE
-};
-
 #endif // UTIL_H

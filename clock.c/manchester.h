@@ -6,9 +6,9 @@
 #include "util.h"
 
 
-const u16 sendHalf = 50;
+const u16 sendHalf = 60;
 const u16 sendRate = sendHalf*2;
-const u16 recieveTimeout = sendRate*3;
+const u16 recieveTimeout = sendRate*2;
 
 // don't change, assumed by logic.
 const u16 initSignal = sendHalf + sendRate;
@@ -25,21 +25,22 @@ struct Sender {
 
     inline void waitAndChange() {
         currVal = 1-currVal;
-        bool ok = false;
+        // bool ok = false;
         while (true) {
             if (toWait <= u16(micros()) - u16(currStart)) {
                 digitalWrite(pin, currVal);
                 currStart += toWait;
-                if (!ok) {
-                    delay(10);
-                }
+                // if (!ok) {
+                //     // Only for noticing problems, remove when stable.
+                //     delay(10);
+                // }
                 return;
             }
-            ok = true;
+            // ok = true;
         }
     }
 
-    void Send2(byte* dataVec, byte n) {
+    void Send(byte* dataVec, byte n) {
         currVal = 0;
         digitalWrite(pin, currVal); // 0
         currStart = micros();
@@ -67,29 +68,29 @@ struct Sender {
         }
     }
 
-    void Send(byte* dataVec, byte n) {
+    void SendDelay(byte* dataVec, byte n) {
         currVal = 0;
         digitalWrite(pin, currVal); // 0
         delayMicroseconds(sendRate);
         currVal = 1 - currVal;
         digitalWrite(pin, currVal); // 1
-        delayMicroseconds(initSignal-10);
+        delayMicroseconds(initSignal);
         for (byte i=0; i<n; i++) {
             byte data = dataVec[i];
             for (byte bit = 0x80; bit; bit>>=1) {
                 if (bit&data) {
                     currVal = 1 - currVal;
                     digitalWrite(pin, currVal); // 1
-                    delayMicroseconds(sendRate-10);
+                    delayMicroseconds(sendRate);
                 } else {
                     digitalWrite(pin, 1-currVal); // 1
                     delayMicroseconds(sendHalf);
                     digitalWrite(pin, currVal); // 1
-                    delayMicroseconds(sendHalf-10);
+                    delayMicroseconds(sendHalf);
                 }
-                if (bit!=1) {
-                    delayMicroseconds(5);
-                }
+                // if (bit!=1) {
+                //     delayMicroseconds(5);
+                // }
             }
         }
         currVal = 1 - currVal;
@@ -113,26 +114,26 @@ struct Receiver {
 
     u8 pin;
     u8 currVal;
-    u16 currStart;
-    u16 prevLength;
+    u8 currStart;
+    u8 prevLength;
 
     Receiver(byte pin) {
         this->pin = pin;
     }
 
     Status waitChange() {
-        u16 prevStart = currStart;
-        bool ok = false;
+        u8 prevStart = currStart;
+        // bool ok = false;
         while (digitalRead(pin) == currVal) {
-            ok = true;
-            u16 elapsed = u16(micros())-currStart;
+            // ok = true;
+            u8 elapsed = u8(micros())-currStart;
             if (recieveTimeout < elapsed) {
                 return TIMEOUT;
             }
         }
-        if (!ok) {
-            return TOOSLOW;
-        }
+        // if (!ok) {
+        //     return TOOSLOW;
+        // }
         currStart = micros();
         prevLength = currStart - prevStart;
         currVal = 1 - currVal;
@@ -140,8 +141,8 @@ struct Receiver {
     }
 
     Status Receive(byte *dataVec, byte n) {
-        u16 longShortThreshold = initSignal / 2;
-        i16 badCycleDiffLimit = (25*initSignal)/100;
+        u8 longShortThreshold = initSignal / 2;
+        u8 badCycleDiffLimit = (25*initSignal)/100;
         if (digitalRead(pin) != 0) {
             return ALREADYHIGH;
         }
@@ -153,8 +154,7 @@ struct Receiver {
             return ret;
         }
 
-        i16 actualInitTime = prevLength;
-        i16 diff = actualInitTime - initSignal;
+        i16 diff = i16(prevLength) - initSignal;
         if (badCycleDiffLimit < abs(diff)) {
             return BADCYCLELEN;
         }

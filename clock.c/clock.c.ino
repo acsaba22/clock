@@ -3,7 +3,7 @@
 #include "manchester.h"
 #include "manchester_test.h"
 
-const Mode mode = SLAVE;
+const Mode mode = MASTER;
 const byte ledPin = 3;
 const byte debugPin = 4;
 
