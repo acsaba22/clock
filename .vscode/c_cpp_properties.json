@@ -9,7 +9,7 @@
                 "/home/acsaba/Arduino/libraries/**",
                 "/home/acsaba/data/work/arduino/arduino-1.8.13/libraries/**",
                 "/home/acsaba/data/work/arduino/arduino-1.8.13/hardware/tools/**",
-                "/home/acsaba/data/work/arduino/arduino-1.8.13/hardware/arduino/avr/**",
+                "/home/acsaba/data/work/arduino/arduino-1.8.13/hardware/arduino/avr/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
