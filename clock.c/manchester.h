@@ -6,7 +6,7 @@
 #include "util.h"
 
 
-const u16 sendHalf = 100;
+const u16 sendHalf = 50;
 const u16 sendRate = sendHalf*2;
 const u16 recieveTimeout = sendRate*3;
 
@@ -16,27 +16,30 @@ const u16 initSignal = sendHalf + sendRate;
 struct Sender {
     u8 pin;
     u8 currVal;
-    u32 currStart;
-    u32 toWait;
+    u16 currStart;
+    u16 toWait;
 
     Sender(u8 pin) {
         this->pin = pin;
     }
 
-    void waitAndChange() {
+    inline void waitAndChange() {
         currVal = 1-currVal;
+        bool ok = false;
         while (true) {
-            u32 now = micros();
-            u32 elapsed = now-currStart;
-            if (toWait < elapsed) {
+            if (toWait <= u16(micros()) - u16(currStart)) {
                 digitalWrite(pin, currVal);
                 currStart += toWait;
+                if (!ok) {
+                    delay(10);
+                }
                 return;
             }
+            ok = true;
         }
     }
 
-    void Send(byte* dataVec, byte n) {
+    void Send2(byte* dataVec, byte n) {
         currVal = 0;
         digitalWrite(pin, currVal); // 0
         currStart = micros();
@@ -63,6 +66,39 @@ struct Sender {
             waitAndChange(); //0
         }
     }
+
+    void Send(byte* dataVec, byte n) {
+        currVal = 0;
+        digitalWrite(pin, currVal); // 0
+        delayMicroseconds(sendRate);
+        currVal = 1 - currVal;
+        digitalWrite(pin, currVal); // 1
+        delayMicroseconds(initSignal-10);
+        for (byte i=0; i<n; i++) {
+            byte data = dataVec[i];
+            for (byte bit = 0x80; bit; bit>>=1) {
+                if (bit&data) {
+                    currVal = 1 - currVal;
+                    digitalWrite(pin, currVal); // 1
+                    delayMicroseconds(sendRate-10);
+                } else {
+                    digitalWrite(pin, 1-currVal); // 1
+                    delayMicroseconds(sendHalf);
+                    digitalWrite(pin, currVal); // 1
+                    delayMicroseconds(sendHalf-10);
+                }
+                if (bit!=1) {
+                    delayMicroseconds(5);
+                }
+            }
+        }
+        currVal = 1 - currVal;
+        digitalWrite(pin, currVal);
+        if (currVal==1) {
+            delayMicroseconds(sendHalf);
+            digitalWrite(pin, 0);
+        }
+    }
 };
 
 struct Receiver {
@@ -72,24 +108,30 @@ struct Receiver {
         BADCYCLELEN,
         TIMEOUT,
         SINGLESHORT,
+        TOOSLOW
     };
 
     u8 pin;
     u8 currVal;
-    u32 currStart;
-    u32 prevLength;
+    u16 currStart;
+    u16 prevLength;
 
     Receiver(byte pin) {
         this->pin = pin;
     }
 
     Status waitChange() {
-        u32 prevStart = currStart;
+        u16 prevStart = currStart;
+        bool ok = false;
         while (digitalRead(pin) == currVal) {
-            ulong elapsed = micros()-currStart;
+            ok = true;
+            u16 elapsed = u16(micros())-currStart;
             if (recieveTimeout < elapsed) {
                 return TIMEOUT;
             }
+        }
+        if (!ok) {
+            return TOOSLOW;
         }
         currStart = micros();
         prevLength = currStart - prevStart;
@@ -98,6 +140,8 @@ struct Receiver {
     }
 
     Status Receive(byte *dataVec, byte n) {
+        u16 longShortThreshold = initSignal / 2;
+        i16 badCycleDiffLimit = (25*initSignal)/100;
         if (digitalRead(pin) != 0) {
             return ALREADYHIGH;
         }
@@ -109,14 +153,12 @@ struct Receiver {
             return ret;
         }
 
-        u32 actualInitTime = prevLength;
-        int diff = int(actualInitTime) - initSignal;
-        diff = abs(diff);
-        if ((25*initSignal)/100 < diff) {
+        i16 actualInitTime = prevLength;
+        i16 diff = actualInitTime - initSignal;
+        if (badCycleDiffLimit < abs(diff)) {
             return BADCYCLELEN;
         }
 
-        u32 longShortThreshold = actualInitTime / 2;
         for (u8 i = 0; i<n; i++) {
             u8 data = 0;
             for (u8 bit = 0x80; bit; bit>>=1) {

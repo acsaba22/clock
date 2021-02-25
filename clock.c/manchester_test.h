@@ -47,7 +47,7 @@ void slaveLoop(byte ledPin, byte debugPin) {
     }
     for (u8 i=0; i<blinkNum; i++) {
         digitalWrite(debugPin, HIGH);
-        delay(200);
+        delay(100);
         digitalWrite(debugPin, LOW);
         delay(200);
     }
