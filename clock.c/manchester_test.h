@@ -5,7 +5,7 @@
 #include "util.h"
 #include "manchester.h"
 
-enum Mode {
+enum TestMode {
     MASTER,
     SLAVE
 };
@@ -23,7 +23,7 @@ void slaveSetup(byte ledPin, byte debugPin) {
     pinMode(debugPin, OUTPUT);
 }
 
-void setupManchesterTest(Mode mode, byte ledPin, byte debugPin) {
+void setupManchesterTest(TestMode mode, byte ledPin, byte debugPin) {
     if (mode == MASTER) {
         masterSetup(ledPin, debugPin);
     } else {
@@ -66,7 +66,7 @@ void slaveLoop(byte ledPin, byte debugPin) {
 }
 
 
-void loopManchesterTest(Mode mode, byte ledPin, byte debugPin) {
+void loopManchesterTest(TestMode mode, byte ledPin, byte debugPin) {
     if (mode == MASTER) {
         masterLoop(ledPin, debugPin);
     } else {

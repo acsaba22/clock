@@ -1,9 +1,8 @@
 #include <Arduino.h>
 #include "util.h"
-#include "manchester.h"
-#include "manchester_test.h"
 
-const Mode mode = MASTER;
+#include "manchester_test.h"
+const TestMode mode = MASTER;
 const byte ledPin = 3;
 const byte debugPin = 4;
 
