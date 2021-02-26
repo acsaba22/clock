@@ -18,22 +18,27 @@ void putState(u8 state) {
     }
 }
 
+const int n = 4;
+
 void loopSlave(SlaveNum slaveNum) {
-    u8 state = 0;
+    u8 states[n]={0b1111, 0b1111, 0b1111, 0b1111};
+    u8 state = 0b1111;
     u8 nextState = 0;
     Receiver::Status status;
 
     Receiver receiver(COMMUNICATION_PIN);
     while (true) {
-        putState(state);
-        status = receiver.Receive(&nextState, 1);
-        if (status == Receiver::READOK) {
-            if (slaveNum == SECOND) {
-                nextState >>= 4;
+        for (int i=0; i<4; i++) {
+            status = receiver.Receive(&nextState, 1);
+            if (status == Receiver::READOK) {
+                if (slaveNum == SECOND) {
+                    nextState >>= 4;
+                }
+                states[i] = nextState;
             }
-            state = nextState;
+            delayMicroseconds(SLAVEDELAY);
+            putState(states[i]);
         }
-        delayMicroseconds(SLAVEDELAY);
     }
 }
 
