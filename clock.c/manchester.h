@@ -8,7 +8,7 @@
 
 const u16 sendHalf = 60;
 const u16 sendRate = sendHalf*2;
-const u16 recieveTimeout = sendRate*2;
+const u16 receiveTimeout = sendRate*2;
 
 // don't change, assumed by logic.
 const u16 initSignal = sendHalf + sendRate;
@@ -127,7 +127,7 @@ struct Receiver {
         while (digitalRead(pin) == currVal) {
             // ok = true;
             u8 elapsed = u8(micros())-currStart;
-            if (recieveTimeout < elapsed) {
+            if (receiveTimeout < elapsed) {
                 return TIMEOUT;
             }
         }

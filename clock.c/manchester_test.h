@@ -10,31 +10,31 @@ enum TestMode {
     SLAVE
 };
 
-void masterSetup(byte ledPin, byte debugPin) {
-    pinMode(0, INPUT);
-    pinMode(1, INPUT);
-    pinMode(2, INPUT);
+void testSetupMaster(byte ledPin, byte debugPin) {
+    // pinMode(0, INPUT);
+    // pinMode(1, INPUT);
+    // pinMode(2, INPUT);
     pinMode(ledPin, OUTPUT);
     pinMode(debugPin, OUTPUT);
 }
 
-void slaveSetup(byte ledPin, byte debugPin) {
+void testSetupSlave(byte ledPin, byte debugPin) {
     pinMode(ledPin, INPUT);
     pinMode(debugPin, OUTPUT);
 }
 
 void setupManchesterTest(TestMode mode, byte ledPin, byte debugPin) {
     if (mode == MASTER) {
-        masterSetup(ledPin, debugPin);
+        testSetupMaster(ledPin, debugPin);
     } else {
-        slaveSetup(ledPin, debugPin);
+        testSetupSlave(ledPin, debugPin);
     }
 }
 
 const char message[] = "Hello World!";
 const char messageLen = LEN(message);
 
-void masterLoop(byte ledPin, byte debugPin) {
+void testLoopMaster(byte ledPin, byte debugPin) {
     digitalWrite(debugPin, 1);
     delay(2000);
     digitalWrite(debugPin, 0);
@@ -42,7 +42,7 @@ void masterLoop(byte ledPin, byte debugPin) {
     sender.Send((byte*)message, messageLen);
 }
 
-void slaveLoop(byte ledPin, byte debugPin) {
+void tasteLoopSlave(byte ledPin, byte debugPin) {
     Receiver receiver(ledPin);
     byte data[messageLen+10];
     Receiver::Status s = receiver.Receive(data, messageLen);
@@ -68,9 +68,9 @@ void slaveLoop(byte ledPin, byte debugPin) {
 
 void loopManchesterTest(TestMode mode, byte ledPin, byte debugPin) {
     if (mode == MASTER) {
-        masterLoop(ledPin, debugPin);
+        testLoopMaster(ledPin, debugPin);
     } else {
-        slaveLoop(ledPin, debugPin);
+        tasteLoopSlave(ledPin, debugPin);
     }
 }
 
