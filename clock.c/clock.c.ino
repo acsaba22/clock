@@ -13,6 +13,12 @@ const SlaveNum slaveNum = SECOND;
 const u8 debugPin = 4;
 
 void setupMaster() {
+    // for programming.
+    for (int i=0; i<5; i++) {
+        pinMode(i, INPUT);
+    }
+    delay(4000);
+
     pinMode(COMMUNICATION_PIN, OUTPUT);
     pinMode(1, OUTPUT);
     pinMode(2, OUTPUT);
@@ -38,22 +44,41 @@ void testRound() {
     delay(500);
 }
 
+void clearOutputs() {
+    digitalWrite(1, LOW);
+    digitalWrite(2, LOW);
+    digitalWrite(3, LOW);
+    digitalWrite(4, LOW);
+}
+
 void testDigits() {
     Sender sender(COMMUNICATION_PIN);
-    // for (int k=0; k<10000; k++) {
-    //     for (int d=0; d<4; d++) {
-    //         digitalWrite(d+1, HIGH);
-    //     }
-    // }
-    digitalWrite(1, HIGH);
-    digitalWrite(2, HIGH);
-    digitalWrite(3, HIGH);
-    digitalWrite(4, HIGH);
-    for (u8 d = 0; d<=10; d++) {
-        u8 v = digitVal(d);
-        sender.Send(&v, 1);
-        delay(1000);
+    u16 num = 0;
+    u16 steps = 1;
+    while (true) {
+        u16 numRemainder = num;
+        for (int k=0; k<4; k++) {
+            u8 d = numRemainder % 10;
+            numRemainder /= 10;
+            u8 v = digitVal(d);
+            sender.Send(&v, 1);
+            clearOutputs();
+            delayMicroseconds(SLAVEDELAY);
+            digitalWrite(k+1, HIGH);
+            // delay(300);
+        }
+        steps++;
+        if (steps == 40) {
+            steps = 0;
+            num++;
+            num %= 10000;
+        }
     }
+    // for (u8 d = 0; d<=10; d++) {
+    //     u8 v = digitVal(d);
+    //     sender.Send(&v, 1);
+    //     delay(1000);
+    // }
 }
 
 void loop() {
